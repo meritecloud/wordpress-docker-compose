@@ -59,7 +59,7 @@ services:
     restart: always
     ports:
       - 0.0.0.0:8080:80
-      - 0.0.0.0:443:443
+      - 0.0.0.0:44301:443
     environment:
       PMA_HOST: db
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
