@@ -1,23 +1,25 @@
-version: '3'
+version: "3.7"
 
 services:
+  #Wordpress
   wp:
-    image: wordpress:latest # https://hub.docker.com/_/wordpress/
+    image: wordpress:5.2.2
     ports:
-      - 80:80 # change ip if required
+      - 0.0.0.0:80:80
+      - 0.0.0.0:443:443
+    restart: always
     volumes:
-      - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini
-      - ./wp-app:/var/www/html # Full wordpress project
-      #- ./plugin-name/trunk/:/var/www/html/wp-content/plugins/plugin-name # Plugin development
-      #- ./theme-name/trunk/:/var/www/html/wp-content/themes/theme-name # Theme development
+       - wp_data:/var/wwww/html
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_NAME: "${DB_NAME}"
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: "${DB_ROOT_PASSWORD}"
+      WORDPRESS_TABLE_PREFIX: "${TABLE_PREFIX}"
     depends_on:
       - db
 
+  #wpcli
   wpcli:
     image: wordpress:cli
     volumes:
@@ -27,10 +29,19 @@ services:
       - db
       - wp
 
+  #Database
   db:
-    image: mysql:latest # https://hub.docker.com/_/mysql/ - or mariadb https://hub.docker.com/_/mariadb
+    image: mysql:8.0.17
+    volumes:
+       - db_data:/var/lib/mysql
     ports:
-      - ${IP}:3306:3306 # change ip if required
+      - 3306:3306
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${DB_NAME}"
+      MYSQL_USER: root
+      MYSQL_PASSWORD: "${DB_ROOT_PASSWORD}"
     command: [
         '--default_authentication_plugin=mysql_native_password',
         '--character-set-server=utf8mb4',
@@ -39,9 +50,20 @@ services:
     volumes:
       - ./wp-data:/docker-entrypoint-initdb.d
       - db_data:/var/lib/mysql
-    environment:
-      MYSQL_DATABASE: "${DB_NAME}"
-      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
 
+  #Phpmyadmin
+  phpmyadmin:
+    depends_on:
+      - db
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - 0.0.0.0:8080:80
+      - 0.0.0.0:443:443
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+  
 volumes:
-  db_data:
+    wp_data:
+    db_data:
